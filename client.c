@@ -89,7 +89,11 @@
 
 /* These are for IPV4LL, RFC 3927. */
 #define PROBE_WAIT		 1
+#ifdef ATH_SDK
+#define PROBE_NUM		 1
+#else
 #define PROBE_NUM		 3
+#endif
 #define PROBE_MIN		 1
 #define PROBE_MAX		 2
 #define ANNOUNCE_WAIT		 2
@@ -1313,6 +1317,22 @@ dhcp_timeout:
 		timerclear(&state->timeout);
 		return 0;
 	}
+#ifdef ATH_SDK /* ATHENV */
+	if (state->state == STATE_PROBING ) {
+		state->timeout.tv_sec = (state->messages+1);
+	} else if (state->state == STATE_REQUESTING ) {
+		state->timeout.tv_sec = state->messages < 4 ? (state->messages+1) : DHCP_BASE;
+	} else if (state->state == STATE_DISCOVERING) {
+		state->timeout.tv_sec = state->messages < 4 ? (state->messages+1) : DHCP_BASE*2;
+	} else if (state->state == STATE_RENEWING) {
+		state->timeout.tv_sec = state->messages < 10 ? (state->messages+1)*2 : DHCP_BASE*5;
+	} else {
+		state->timeout.tv_sec = state->messages < 10 ? (state->messages+1) : DHCP_BASE*2;
+	}
+	if (state->timeout.tv_sec > DHCP_MAX) {
+		state->timeout.tv_sec = DHCP_MAX;
+	}
+#else
 	state->timeout.tv_sec = DHCP_BASE;
 	for (i = 0; i < state->messages; i++) {
 		state->timeout.tv_sec *= 2;
@@ -1321,6 +1341,7 @@ dhcp_timeout:
 			break;
 		}
 	}
+#endif
 	state->timeout.tv_sec += DHCP_RAND_MIN;
 	state->timeout.tv_usec = arc4random() %
 		(DHCP_RAND_MAX_U - DHCP_RAND_MIN_U);
@@ -1422,6 +1443,13 @@ handle_dhcp(struct if_state *state, struct dhcp_message **dhcpp,
 	/* We should restart on a NAK */
 	if (type == DHCP_NAK) {
 		log_dhcp(LOG_WARNING, "NAK:", dhcp);
+		/* For NAK, only check if we require the ServerID */
+		if (has_option_mask(options->requiremask, DHO_SERVERID) &&
+		    get_option_addr(&addr.s_addr, dhcp, DHO_SERVERID) == -1)
+		{
+			log_dhcp(LOG_WARNING, "reject NAK", dhcp);
+			return 0;
+		}
 		drop_config(state, "EXPIRE", options);
 		do_socket(state, SOCKET_CLOSED);
 		state->state = STATE_INIT;
