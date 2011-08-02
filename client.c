@@ -24,6 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+/* Copyright (C) 2011 Freescale Semiconductor,Inc. */
 
 #include <sys/stat.h>
 #include <sys/time.h>
