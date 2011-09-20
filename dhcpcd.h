@@ -38,7 +38,7 @@
 
 #include "common.h"
 
-#define DEFAULT_TIMEOUT		30
+#define DEFAULT_TIMEOUT		10
 #define DEFAULT_LEASETIME	3600	/* 1 hour */
 
 #define HOSTNAME_MAX_LEN	250	/* 255 - 3 (FQDN) - 2 (DNS enc) */
