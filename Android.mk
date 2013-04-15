@@ -12,12 +12,24 @@ ifdef BOARD_WLAN_ATHEROS_SDK
 LOCAL_CFLAGS += -DATH_SDK
 endif
 
-LOCAL_SRC_FILES := common.c dhcp.c dhcpcd.c logger.c net.c \
-	signals.c configure.c client.c if-linux.c lpf.c
+LOCAL_SRC_FILES := common.c dhcp.c dhcpcd.c net.c \
+	signals.c configure.c if-linux.c lpf.c
+
+ifeq ($(BOARD_USES_REALTEK_WIFI),true)
+LOCAL_SRC_FILES += logger_realtek.c client_realtek.c
+else
+LOCAL_SRC_FILES += logger.c client.c
+endif
+
 LOCAL_C_INCLUDES := $(KERNEL_HEADERS)
 LOCAL_SHARED_LIBRARIES := libc libcutils
 LOCAL_MODULE = dhcpcd
 LOCAL_MODULE_TAGS := user
+
+ifeq ($(BOARD_USES_REALTEK_WIFI),true)
+LOCAL_SHARED_LIBRARIES += libhardware_legacy
+endif
+
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
